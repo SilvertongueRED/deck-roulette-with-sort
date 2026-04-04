@@ -4,18 +4,17 @@ import {
 	Focusable,
 	PanelSection,
 	PanelSectionRow,
-	ServerAPI,
 	showModal,
 	TextField,
 	ToggleField,
-} from "decky-frontend-lib"
+} from "@decky/ui"
+import { call } from "@decky/api"
 import { useEffect, useState } from "react"
 
 type ListEditorProps = {
 	currentName?: string
 	currentList: number[]
 	setEditingList: (val: undefined) => void
-	serverApi: ServerAPI
 	setCustomLists: (val: { [key: string]: number[] }) => void
 }
 
@@ -55,7 +54,6 @@ const ListEditor = ({
 	currentName = "New Game List",
 	currentList,
 	setEditingList,
-	serverApi,
 	setCustomLists,
 }: ListEditorProps) => {
 	const [newName, setNewName] = useState(currentName)
@@ -96,19 +94,16 @@ const ListEditor = ({
 	}
 
 	const save = () => {
-		serverApi
-			.callPluginMethod("update_game_list", {
-				name: currentName,
-				new_list: appIds,
-				new_name: newName === currentName ? undefined : newName,
-			})
-			.then((res) => {
-				console.log(res)
-				if (res.success) {
-					setCustomLists(res.result)
-				}
-				setEditingList(undefined)
-			})
+		call<[string, number[], string | undefined], { [key: string]: number[] }>(
+			"update_game_list",
+			currentName,
+			appIds,
+			newName === currentName ? undefined : newName,
+		).then((result) => {
+			console.log(result)
+			setCustomLists(result)
+			setEditingList(undefined)
+		})
 	}
 
 	return (
