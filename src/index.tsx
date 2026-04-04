@@ -138,9 +138,9 @@ const DeckRoulette = () => {
 										setEditingList({ listName, appIds })
 									}
 									onDelete={() =>
-										call("delete_game_list", listName)
+										call<[string], { [key: string]: number[] }>("delete_game_list", listName)
 											.then((result) => {
-												setCustomLists(result as { [key: string]: number[] })
+												setCustomLists(result)
 											})
 									}
 								>

@@ -94,12 +94,16 @@ const ListEditor = ({
 	}
 
 	const save = () => {
-		call<[string, number[], string | undefined], { [key: string]: number[] }>("update_game_list", currentName, appIds, newName === currentName ? undefined : newName)
-			.then((result) => {
-				console.log(result)
-				setCustomLists(result)
-				setEditingList(undefined)
-			})
+		call<[string, number[], string | undefined], { [key: string]: number[] }>(
+			"update_game_list",
+			currentName,
+			appIds,
+			newName === currentName ? undefined : newName,
+		).then((result) => {
+			console.log(result)
+			setCustomLists(result)
+			setEditingList(undefined)
+		})
 	}
 
 	return (
