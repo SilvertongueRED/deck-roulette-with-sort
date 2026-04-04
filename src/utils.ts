@@ -12,19 +12,19 @@ export const navigateToRandomGame = (appIds: number[]) => {
 
 // Sort mode definitions
 export enum SortMode {
-	RecentlyOpened = "recently-opened",
+	RecentlyPlayed = "recently-played",
 	RecentlyRouletted = "recently-rouletted",
 	RecentlyCreated = "recently-created",
 }
 
 export const SORT_MODE_LABELS: Record<SortMode, string> = {
-	[SortMode.RecentlyOpened]: "Recently Played",
+	[SortMode.RecentlyPlayed]: "Recently Played",
 	[SortMode.RecentlyRouletted]: "Recently Rouletted",
 	[SortMode.RecentlyCreated]: "Recently Created",
 }
 
 const SORT_MODE_ORDER: SortMode[] = [
-	SortMode.RecentlyOpened,
+	SortMode.RecentlyPlayed,
 	SortMode.RecentlyRouletted,
 	SortMode.RecentlyCreated,
 ]
@@ -94,7 +94,7 @@ export const sortCollections = (
 ): SteamCollection[] => {
 	const sorted = [...collections]
 	switch (mode) {
-		case SortMode.RecentlyOpened:
+		case SortMode.RecentlyPlayed:
 			sorted.sort((a, b) => {
 				const aMax = Math.max(
 					0,
