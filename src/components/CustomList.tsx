@@ -1,9 +1,10 @@
-import { DialogButton, Focusable } from "decky-frontend-lib"
+import { DialogButton, Focusable } from "@decky/ui"
+import React from "react"
 import { BsFillTrashFill } from "react-icons/bs"
 import { RiPencilFill } from "react-icons/ri"
 
 type CustomListProps = {
-	children?: JSX.Element | string
+	children?: React.ReactNode
 	onSelect: () => void
 	onEdit: () => void
 	onDelete: () => void

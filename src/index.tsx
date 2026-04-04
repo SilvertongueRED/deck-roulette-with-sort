@@ -1,11 +1,10 @@
 import {
 	ButtonItem,
-	definePlugin,
 	PanelSection,
 	PanelSectionRow,
-	ServerAPI,
 	staticClasses,
-} from "decky-frontend-lib"
+} from "@decky/ui"
+import { definePlugin } from "@decky/api"
 import { useState } from "react"
 import { GiPerspectiveDiceSixFacesRandom } from "react-icons/gi"
 
@@ -22,7 +21,7 @@ import {
 	sortCollections,
 } from "./utils"
 
-const DeckRoulette = ({ serverApi }: { serverApi: ServerAPI }) => {
+const DeckRoulette = () => {
 	const { collectionStore }: { collectionStore: CollectionStore } =
 		window as any
 
@@ -76,15 +75,10 @@ const DeckRoulette = ({ serverApi }: { serverApi: ServerAPI }) => {
 	}>()
 
 	useEffect(() => {
-		serverApi
-			.callPluginMethod<{}, { [key: string]: number[] }>(
-				"get_game_lists",
-				{}
-			)
-			.then((res) => {
-				console.log(res)
-				if (!res.success) return
-				setCustomLists(res.result)
+		call<[], { [key: string]: number[] }>("get_game_lists")
+			.then((result) => {
+				console.log(result)
+				setCustomLists(result)
 			})
 	}, [])
 
@@ -94,7 +88,6 @@ const DeckRoulette = ({ serverApi }: { serverApi: ServerAPI }) => {
 				currentName={editingList.listName}
 				currentList={editingList.appIds}
 				setEditingList={setEditingList}
-				serverApi={serverApi}
 				setCustomLists={setCustomLists}
 			/>
 		)
@@ -145,14 +138,9 @@ const DeckRoulette = ({ serverApi }: { serverApi: ServerAPI }) => {
 										setEditingList({ listName, appIds })
 									}
 									onDelete={() =>
-										serverApi
-											.callPluginMethod(
-												"delete_game_list",
-												{ name: listName }
-											)
-											.then((res) => {
-												if (res.success)
-													setCustomLists(res.result)
+										call("delete_game_list", listName)
+											.then((result) => {
+												setCustomLists(result as { [key: string]: number[] })
 											})
 									}
 								>
@@ -234,10 +222,11 @@ const DeckRoulette = ({ serverApi }: { serverApi: ServerAPI }) => {
 	)
 }
 
-export default definePlugin((serverApi: ServerAPI) => {
+export default definePlugin(() => {
 	return {
-		title: <div className={staticClasses.Title}>DeckRoulette</div>,
-		content: <DeckRoulette serverApi={serverApi} />,
+		name: "DeckRoulette",
+		titleView: <div className={staticClasses.Title}>DeckRoulette</div>,
+		content: <DeckRoulette />,
 		icon: <GiPerspectiveDiceSixFacesRandom />,
 		alwaysRender: false,
 		onDismount() {},
