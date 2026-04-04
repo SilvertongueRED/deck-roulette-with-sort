@@ -6,10 +6,21 @@ import {
 	ServerAPI,
 	staticClasses,
 } from "decky-frontend-lib"
-import React from "react"
+import { useState } from "react"
 import { GiPerspectiveDiceSixFacesRandom } from "react-icons/gi"
 
-import { EXCLUDE_COLLECTION_IDS, navigateToRandomGame } from "./utils"
+import {
+	EXCLUDE_COLLECTION_IDS,
+	navigateToRandomGame,
+	SortMode,
+	SORT_MODE_LABELS,
+	getNextSortMode,
+	loadSortMode,
+	saveSortMode,
+	loadRouletteTimestamps,
+	saveRouletteTimestamp,
+	sortCollections,
+} from "./utils"
 
 const DeckRoulette = ({ serverApi }: { serverApi: ServerAPI }) => {
 	const { collectionStore }: { collectionStore: CollectionStore } =
@@ -25,6 +36,35 @@ const DeckRoulette = ({ serverApi }: { serverApi: ServerAPI }) => {
 	]
 
 	const myGamesCollection = collectionStore.myGamesCollection
+
+	const [sortMode, setSortMode] = useState<SortMode>(loadSortMode())
+	const [rouletteTimestamps, setRouletteTimestamps] = useState<
+		Record<string, number>
+	>(loadRouletteTimestamps())
+
+	const cycleSortMode = () => {
+		const nextMode = getNextSortMode(sortMode)
+		setSortMode(nextMode)
+		saveSortMode(nextMode)
+	}
+
+	const handleRouletteClick = (
+		collectionId: string,
+		appIds: number[]
+	) => {
+		const newTimestamps = saveRouletteTimestamp(collectionId)
+		setRouletteTimestamps(newTimestamps)
+		navigateToRandomGame(appIds)
+	}
+
+	const filteredCollections = collections.filter(
+		(c) => !EXCLUDE_COLLECTION_IDS.includes(c.id)
+	)
+	const sortedCollections = sortCollections(
+		filteredCollections,
+		sortMode,
+		rouletteTimestamps
+	)
 
 	/* Uncomment to enable in-plugin custom lists
 	const [customLists, setCustomLists] = useState<{
@@ -142,28 +182,52 @@ const DeckRoulette = ({ serverApi }: { serverApi: ServerAPI }) => {
 				</PanelSectionRow>
 			</PanelSection> */}
 			<PanelSection title="Steam Collections">
-				{collections.map((collection) => (
-					<React.Fragment key={collection.id}>
-						{EXCLUDE_COLLECTION_IDS.includes(
-							collection.id
-						) ? null : (
-							<PanelSectionRow>
-								<ButtonItem
-									layout="below"
-									onClick={() =>
-										navigateToRandomGame(
-											collection.visibleApps.map(
-												(app) => app.appid
-											)
-										)
-									}
-								>
-									{collection.displayName} (
-									{collection.visibleApps.length})
-								</ButtonItem>
-							</PanelSectionRow>
-						)}
-					</React.Fragment>
+				<PanelSectionRow>
+					<ButtonItem layout="below" onClick={cycleSortMode}>
+						<div
+							style={{
+								display: "flex",
+								flexDirection: "column",
+								alignItems: "center",
+								gap: "2px",
+							}}
+						>
+							<div style={{ fontWeight: "bold" }}>
+								Sort: {SORT_MODE_LABELS[sortMode]}
+							</div>
+							<div
+								style={{
+									fontSize: "0.75em",
+									opacity: 0.6,
+								}}
+							>
+								Next:{" "}
+								{
+									SORT_MODE_LABELS[
+										getNextSortMode(sortMode)
+									]
+								}
+							</div>
+						</div>
+					</ButtonItem>
+				</PanelSectionRow>
+				{sortedCollections.map((collection) => (
+					<PanelSectionRow key={collection.id}>
+						<ButtonItem
+							layout="below"
+							onClick={() =>
+								handleRouletteClick(
+									collection.id,
+									collection.visibleApps.map(
+										(app) => app.appid
+									)
+								)
+							}
+						>
+							{collection.displayName} (
+							{collection.visibleApps.length})
+						</ButtonItem>
+					</PanelSectionRow>
 				))}
 			</PanelSection>
 		</div>
