@@ -95,6 +95,45 @@ const DeckRoulette = () => {
 
 	return (
 		<div>
+			<PanelSection title="Sort Collections">
+				<PanelSectionRow>
+					<ButtonItem layout="below" onClick={cycleSortMode}>
+						<div
+							style={{
+								display: "flex",
+								flexDirection: "column",
+								alignItems: "center",
+								gap: "4px",
+								padding: "2px 0",
+							}}
+						>
+							<div
+								style={{
+									fontSize: "1em",
+									fontWeight: "bold",
+									letterSpacing: "0.5px",
+								}}
+							>
+								🔀 Sort: {SORT_MODE_LABELS[sortMode]}
+							</div>
+							<div
+								style={{
+									fontSize: "0.75em",
+									opacity: 0.6,
+									fontStyle: "italic",
+								}}
+							>
+								Next:{" "}
+								{
+									SORT_MODE_LABELS[
+										getNextSortMode(sortMode)
+									]
+								}
+							</div>
+						</div>
+					</ButtonItem>
+				</PanelSectionRow>
+			</PanelSection>
 			<PanelSection title="Random Game">
 				{localGames ? (
 					<PanelSectionRow>
@@ -170,35 +209,6 @@ const DeckRoulette = () => {
 				</PanelSectionRow>
 			</PanelSection> */}
 			<PanelSection title="Steam Collections">
-				<PanelSectionRow>
-					<ButtonItem layout="below" onClick={cycleSortMode}>
-						<div
-							style={{
-								display: "flex",
-								flexDirection: "column",
-								alignItems: "center",
-								gap: "2px",
-							}}
-						>
-							<div style={{ fontWeight: "bold" }}>
-								Sort: {SORT_MODE_LABELS[sortMode]}
-							</div>
-							<div
-								style={{
-									fontSize: "0.75em",
-									opacity: 0.6,
-								}}
-							>
-								Next:{" "}
-								{
-									SORT_MODE_LABELS[
-										getNextSortMode(sortMode)
-									]
-								}
-							</div>
-						</div>
-					</ButtonItem>
-				</PanelSectionRow>
 				{sortedCollections.map((collection) => (
 					<PanelSectionRow key={collection.id}>
 						<ButtonItem
