@@ -27,6 +27,7 @@
   },
   "homepage": "https://github.com/davocarli/deck-roulette#readme",
   "devDependencies": {
+    "@decky/rollup": "^1.0.2",
     "@rollup/plugin-commonjs": "^21.1.0",
     "@rollup/plugin-json": "^4.1.0",
     "@rollup/plugin-node-resolve": "^13.3.0",
