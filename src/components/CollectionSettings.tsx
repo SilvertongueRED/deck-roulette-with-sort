@@ -91,12 +91,14 @@ const PinButton = ({
 const OpenedDiagnostics = () => {
 	const [visits] = useState(loadCollectionVisits)
 	const [samples] = useState(loadRouteSamples)
+	const [pickCount] = useState(() => Object.keys(loadRouletteTimestamps()).length)
 
 	return (
 		<PanelSection title="Recently Opened Diagnostics">
 			<PanelSectionRow>
 				<div style={{ width: "100%", fontSize: "0.85em", opacity: 0.8 }}>
-					<div>Collection visits recorded: {Object.keys(visits).length}</div>
+					<div>Library collection visits recorded: {Object.keys(visits).length}</div>
+					<div>Roulette picks recorded: {pickCount}</div>
 					<div style={{ marginTop: "8px" }}>Last pages Steam reported:</div>
 					{samples.length > 0 ? (
 						samples.map((sample, index) => (

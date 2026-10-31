@@ -145,4 +145,20 @@ describe("Recently Opened with collection visits", () => {
 			)
 		).toEqual(["Apple", "Banana"])
 	})
+
+	test("picking a list with the roulette button counts as opening it", () => {
+		const sources = [
+			source("a", "Apple", 1_000),
+			source("b", "Banana", 0),
+			source("c", "Cherry", 0),
+		]
+		const timestamps = { "collection:c": 8_000_000 }
+		const visits = recordCollectionVisit("b", memoryStorage(), 5_000_000)
+
+		expect(
+			sortSources(sources, SortMode.RecentlyOpened, timestamps, visits).map(
+				({ label }) => label
+			)
+		).toEqual(["Cherry", "Banana", "Apple"])
+	})
 })

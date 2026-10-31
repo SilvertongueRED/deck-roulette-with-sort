@@ -109,15 +109,18 @@ const rouletteTime = (
 	0
 
 /**
- * "Opened" means either the list was visited in the library or a game in it
- * was played, whichever happened last. Visits are in milliseconds; Steam's
+ * "Opened" means any of: you picked the list with the roulette button, you
+ * visited it in the Steam Library, or you played a game from it, whichever
+ * happened last. Roulette picks and visits are in milliseconds; Steam's
  * last-played times are in seconds.
  */
 const openedTime = (
 	source: RouletteSource,
+	rouletteTimestamps: Record<string, number>,
 	collectionVisits: Record<string, number>
 ) =>
 	Math.max(
+		rouletteTime(source, rouletteTimestamps),
 		collectionVisits[source.id] ?? 0,
 		(source.lastPlayed ?? 0) * 1000
 	)
@@ -149,8 +152,8 @@ export const sortSources = (
 			}
 			case SortMode.RecentlyOpened: {
 				const difference =
-					openedTime(right, collectionVisits) -
-					openedTime(left, collectionVisits)
+					openedTime(right, rouletteTimestamps, collectionVisits) -
+					openedTime(left, rouletteTimestamps, collectionVisits)
 				return difference || byLabel(left, right)
 			}
 			default:
