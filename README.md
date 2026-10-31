@@ -27,7 +27,7 @@ Each press cycles to the next of three orders:
 | --- | --- |
 | **Alphabetical** (default) | A–Z, the same as the parent plugin |
 | **Recently Rouletted** | Lists you most recently used the roulette button on come first |
-| **Recently Opened** | Lists you most recently opened in your Library, or played a game from, come first |
+| **Recently Opened** | Lists you most recently picked with the roulette button, opened in your Library, or played a game from, come first |
 
 - **Quick Access → Browse Other Lists…** sorts the unpinned lists.
 - **Customize Shortcuts → Available Shortcuts** sorts the lists you can pin.
