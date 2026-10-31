@@ -46,14 +46,14 @@ export const loadCollectionVisits = (
 	return {}
 }
 
-export const recordCollectionVisit = (
-	collectionId: string,
+export const recordSourceVisit = (
+	sourceId: string,
 	storage: StorageLike | undefined = defaultStorage(),
 	now: number = Date.now()
 ) => {
 	const visits = {
 		...loadCollectionVisits(storage),
-		[collectionSourceId(collectionId)]: now,
+		[sourceId]: now,
 	}
 	try {
 		storage?.setItem(COLLECTION_VISITS_KEY, JSON.stringify(visits))
@@ -87,8 +87,14 @@ export const loadRouteSamples = (
 	return []
 }
 
+export const recordCollectionVisit = (
+	collectionId: string,
+	storage: StorageLike | undefined = defaultStorage(),
+	now: number = Date.now()
+) => recordSourceVisit(collectionSourceId(collectionId), storage, now)
+
 /** Keeps the most recent distinct pages we saw, for the diagnostics readout. */
-const recordRouteSample = (
+export const recordRouteSample = (
 	sample: RouteSample,
 	storage: StorageLike | undefined
 ) => {
@@ -144,6 +150,56 @@ export const startCollectionVisitTracker = (
 			recordCollectionVisit(collectionId, storage, options.now?.())
 		}
 		lastCollectionId = collectionId
+	}
+
+	check()
+	const interval = setInterval(check, options.intervalMs ?? 1000)
+	return () => clearInterval(interval)
+}
+
+/**
+ * Watches which library tab is highlighted (Steam's own tabs and Tab Master
+ * tabs do not change the page address) and records a visit when it changes to
+ * a tab whose title matches one of your collections.
+ */
+export const startLibraryTabTracker = (
+	getTabLabel: () => string | undefined,
+	resolveSourceId: (label: string) => string | undefined,
+	options: {
+		storage?: StorageLike
+		intervalMs?: number
+		now?: () => number
+	} = {}
+) => {
+	let primed = false
+	let lastLabel: string | undefined
+	const check = () => {
+		const storage = options.storage ?? defaultStorage()
+		let label: string | undefined
+		try {
+			label = getTabLabel()
+		} catch {
+			return
+		}
+
+		if (label !== lastLabel) {
+			recordRouteSample(
+				{ source: "library-tab", path: label ?? "(none)" },
+				storage
+			)
+			// The first reading is only the starting point, not a visit.
+			if (primed && label) {
+				let sourceId: string | undefined
+				try {
+					sourceId = resolveSourceId(label)
+				} catch {
+					sourceId = undefined
+				}
+				if (sourceId) recordSourceVisit(sourceId, storage, options.now?.())
+			}
+		}
+		primed = true
+		lastLabel = label
 	}
 
 	check()

@@ -6,6 +6,7 @@ import {
 	loadRouteSamples,
 	recordCollectionVisit,
 	startCollectionVisitTracker,
+	startLibraryTabTracker,
 } from "./collectionVisits"
 import type { RouletteSource } from "./gamePools"
 import { SortMode, sortSources, StorageLike } from "./sortSettings"
@@ -160,5 +161,62 @@ describe("Recently Opened with collection visits", () => {
 				({ label }) => label
 			)
 		).toEqual(["Cherry", "Banana", "Apple"])
+	})
+})
+
+describe("startLibraryTabTracker", () => {
+	beforeEach(() => vi.useFakeTimers())
+	afterEach(() => vi.useRealTimers())
+
+	const resolve = (label: string) =>
+		({ cozy: "collection:cozy-id", horror: "collection:horror-id" })[
+			label.toLowerCase()
+		]
+
+	test("records a visit when you switch to a tab named like a collection", () => {
+		const storage = memoryStorage()
+		let label: string | undefined = "Favorites"
+		let now = 100
+		const stop = startLibraryTabTracker(() => label, resolve, {
+			storage,
+			now: () => now,
+		})
+
+		// Starting tab is only a starting point, and Favorites is not resolvable.
+		vi.advanceTimersByTime(2000)
+		expect(loadCollectionVisits(storage)).toEqual({})
+
+		label = "COZY"
+		now = 200
+		vi.advanceTimersByTime(2000)
+		expect(loadCollectionVisits(storage)).toEqual({
+			"collection:cozy-id": 200,
+		})
+
+		label = "Demo" // a tab that is not a collection
+		vi.advanceTimersByTime(1000)
+		label = undefined // library closed
+		vi.advanceTimersByTime(1000)
+		label = "Cozy" // returning to the library on the same tab is a visit
+		now = 900
+		vi.advanceTimersByTime(1000)
+		expect(loadCollectionVisits(storage)["collection:cozy-id"]).toBe(900)
+
+		expect(loadRouteSamples(storage).map(({ path }) => path)).toEqual([
+			"Favorites",
+			"COZY",
+			"Demo",
+			"(none)",
+			"Cozy",
+		])
+		stop()
+	})
+
+	test("does not count the tab that is already open when the plugin loads", () => {
+		const storage = memoryStorage()
+		const stop = startLibraryTabTracker(() => "Horror", resolve, { storage })
+		vi.advanceTimersByTime(3000)
+		expect(loadCollectionVisits(storage)).toEqual({})
+		stop()
 	})
 })
