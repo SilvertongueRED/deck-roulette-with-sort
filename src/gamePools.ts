@@ -11,7 +11,12 @@ export type RouletteSource = {
 	label: string
 	appIds: number[]
 	collectionId?: string
+	/** Most recent time any game in this list was played (Unix seconds). */
+	lastPlayed?: number
 }
+
+export const latestPlayedTime = (apps: SteamAppOverview[] = []) =>
+	apps.reduce((latest, app) => Math.max(latest, app.rt_last_time_played || 0), 0)
 
 export const uniqueAppIds = (appIds: number[]) => Array.from(new Set(appIds))
 
@@ -65,6 +70,10 @@ export const availableRouletteSources = (
 				allCollections,
 				excludedCollectionIds
 			),
+			lastPlayed: latestPlayedTime([
+				...(localGames?.visibleApps ?? []),
+				...(collectionStore?.deckDesktopApps?.visibleApps ?? []),
+			]),
 		},
 		{
 			id: MY_GAMES_SOURCE_ID,
@@ -75,6 +84,7 @@ export const availableRouletteSources = (
 				allCollections,
 				excludedCollectionIds
 			),
+			lastPlayed: latestPlayedTime(myGames?.visibleApps),
 		},
 		...collections.map((collection) => ({
 			id: collectionSourceId(collection.id),
@@ -82,6 +92,7 @@ export const availableRouletteSources = (
 			label: collection.displayName,
 			appIds: uniqueAppIds(collection.visibleApps.map((app) => app.appid)),
 			collectionId: collection.id,
+			lastPlayed: latestPlayedTime(collection.visibleApps),
 		})),
 	]
 }

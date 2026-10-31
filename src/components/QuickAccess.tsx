@@ -24,6 +24,15 @@ import {
 	resolveOtherListsFocus,
 	SETTINGS_FOCUS_ID,
 } from "../quickAccessFocus"
+import {
+	getNextSortMode,
+	loadRouletteTimestamps,
+	loadSortMode,
+	saveRouletteTimestamp,
+	saveSortMode,
+	SORT_MODE_LABELS,
+	sortSources,
+} from "../sortSettings"
 import { navigateToRandomGame } from "../utils"
 
 type QuickAccessProps = {
@@ -54,13 +63,22 @@ export const QuickAccess = ({ store }: QuickAccessProps) => {
 	)
 	const panelRoot = useRef<HTMLDivElement>(null)
 	const preferredFocusTarget = useRef<HTMLDivElement>(null)
+	const [sortMode, setSortMode] = useState(loadSortMode)
+	const [rouletteTimestamps, setRouletteTimestamps] = useState(
+		loadRouletteTimestamps
+	)
 	const collections = selectableCollections(collectionStore)
 	const availableSources = availableRouletteSources(
 		collectionStore,
 		settings.excludedCollectionIds
 	)
-	const { pinnedSources, availableSources: otherSources } =
+	const { pinnedSources, availableSources: unsortedOtherSources } =
 		partitionSourcesByPinned(availableSources, settings.pinnedSourceIds)
+	const otherSources = sortSources(
+		unsortedOtherSources,
+		sortMode,
+		rouletteTimestamps
+	)
 	const knownCollectionIds = new Set(
 		collections.map((collection) => collection.id)
 	)
@@ -121,7 +139,13 @@ export const QuickAccess = ({ store }: QuickAccessProps) => {
 		quickAccessView = "shortcuts"
 		setBrowsingOtherLists(false)
 	}
+	const cycleSortMode = () => {
+		const nextMode = getNextSortMode(sortMode)
+		setSortMode(nextMode)
+		saveSortMode(nextMode)
+	}
 	const openRandomGame = (sourceId: string, appIds: number[]) => {
+		setRouletteTimestamps(saveRouletteTimestamp(sourceId))
 		if (browsingOtherLists) {
 			lastSelectedOtherSourceId = sourceId
 		} else {
@@ -156,6 +180,17 @@ export const QuickAccess = ({ store }: QuickAccessProps) => {
 								← Back to Shortcuts
 							</ButtonItem>
 						</FocusTarget>
+					</PanelSectionRow>
+					<PanelSectionRow>
+						<ButtonItem
+							layout="below"
+							onClick={cycleSortMode}
+							description={`Next: ${
+								SORT_MODE_LABELS[getNextSortMode(sortMode)]
+							}`}
+						>
+							🔀 Sort: {SORT_MODE_LABELS[sortMode]}
+						</ButtonItem>
 					</PanelSectionRow>
 					{otherSources.map((source) => (
 						<PanelSectionRow key={source.id}>

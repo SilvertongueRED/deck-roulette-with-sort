@@ -9,7 +9,7 @@ import {
 	SidebarNavigation,
 	ToggleField,
 } from "@decky/ui"
-import { useEffect, useMemo, useRef } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { FaFilter, FaThumbtack } from "react-icons/fa"
 
 import {
@@ -29,6 +29,14 @@ import {
 } from "../gamePools"
 import { SETTINGS_ROUTE } from "../routes"
 import { SettingsStore } from "../settingsStore"
+import {
+	getNextSortMode,
+	loadRouletteTimestamps,
+	loadSortMode,
+	saveSortMode,
+	SORT_MODE_LABELS,
+	sortSources,
+} from "../sortSettings"
 import { useSettingsStore } from "../useSettingsStore"
 
 type SettingsPageProps = {
@@ -88,11 +96,23 @@ const ShortcutSettings = ({ store }: SettingsPageProps) => {
 		collectionStore,
 		settings.excludedCollectionIds
 	)
-	const { pinnedSources, availableSources: availableShortcuts } =
+	const [sortMode, setSortMode] = useState(loadSortMode)
+	const [rouletteTimestamps] = useState(loadRouletteTimestamps)
+	const { pinnedSources, availableSources: unsortedShortcuts } =
 		partitionSourcesByPinned(
 			availableSources,
 			settings.pinnedSourceIds
 		)
+	const availableShortcuts = sortSources(
+		unsortedShortcuts,
+		sortMode,
+		rouletteTimestamps
+	)
+	const cycleSortMode = () => {
+		const nextMode = getNextSortMode(sortMode)
+		setSortMode(nextMode)
+		saveSortMode(nextMode)
+	}
 	const shortcutState = useRef({ loaded, pinnedSources })
 	shortcutState.current = { loaded, pinnedSources }
 	const reorderEntries: ReorderableEntry<string>[] = pinnedSources.map(
@@ -225,6 +245,17 @@ const ShortcutSettings = ({ store }: SettingsPageProps) => {
 				)}
 			</PanelSection>
 			<PanelSection title="Available Shortcuts">
+				<PanelSectionRow>
+					<ButtonItem
+						layout="below"
+						onClick={cycleSortMode}
+						description={`Next: ${
+							SORT_MODE_LABELS[getNextSortMode(sortMode)]
+						}`}
+					>
+						🔀 Sort: {SORT_MODE_LABELS[sortMode]}
+					</ButtonItem>
+				</PanelSectionRow>
 				{availableShortcuts.length > 0 ? (
 					availableShortcuts.map((source) => (
 						<PanelSectionRow key={source.id}>
