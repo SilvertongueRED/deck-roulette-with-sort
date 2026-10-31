@@ -32,6 +32,14 @@ Each press cycles to the next of three orders:
 - **Quick Access → Browse Other Lists…** sorts the unpinned lists.
 - **Customize Shortcuts → Available Shortcuts** sorts the lists you can pin.
 
+**Browse Other Lists…**
+
+<img src="screenshots/004_sort_browse_other_lists.png" alt="Sort button in Browse Other Lists" width="260">
+
+**Customize Shortcuts → Available Shortcuts**
+
+![Sort button in Customize Shortcuts](screenshots/003_sort_customize_shortcuts.png)
+
 Notes:
 
 - *Locally Installed Games* and *My Games* always stay at the top.
@@ -41,9 +49,6 @@ Notes:
   version that introduced them (1.3.27-sort.2, widened in 1.3.27-sort.3).
 - Switching to a Library tab (including Tab Master tabs) whose name matches a
   collection also counts as opening it. Matching is by name, ignoring case.
-- **Recently Opened Diagnostics** (bottom of Customize Shortcuts → Shortcuts) lists
-  the last pages Steam reported and how many collection visits were recorded.
-  It is a temporary aid while collection-visit tracking is being confirmed.
 - The chosen sort and the roulette history are remembered between sessions.
   They are stored on the Deck in the Steam UI's local storage, so they are not
   part of the plugin's `settings.json`.
