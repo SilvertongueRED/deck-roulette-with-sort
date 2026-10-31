@@ -1,0 +1,65 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read version
+        id: version
+        run: echo "value=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Check whether this version is already released
+        id: existing
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "v${{ steps.version.outputs.value }}" >/dev/null 2>&1; then
+            echo "released=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "released=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-node@v4
+        if: steps.existing.outputs.released == 'false'
+        with:
+          node-version: 22
+
+      - name: Install, test and build
+        if: steps.existing.outputs.released == 'false'
+        run: |
+          npx -y pnpm@9.4.0 install --frozen-lockfile
+          npx -y pnpm@9.4.0 run typecheck
+          npx -y pnpm@9.4.0 run test:frontend
+          npx -y pnpm@9.4.0 run test:backend
+          npx -y pnpm@9.4.0 build
+
+      - name: Package plugin
+        if: steps.existing.outputs.released == 'false'
+        run: |
+          mkdir -p pkg/DeckRoulette/dist
+          cp dist/index.js pkg/DeckRoulette/dist/
+          cp main.py plugin.json package.json LICENSE README.md pkg/DeckRoulette/
+          (cd pkg && zip -r "../DeckRoulette-with-sort-${{ steps.version.outputs.value }}.zip" DeckRoulette)
+
+      - name: Publish release
+        if: steps.existing.outputs.released == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          V="${{ steps.version.outputs.value }}"
+          NOTES="release-notes/$V.md"
+          [ -f "$NOTES" ] || NOTES=/dev/null
+          gh release create "v$V" "DeckRoulette-with-sort-$V.zip" \
+            --title "DeckRoulette with Sort $V" \
+            --notes-file "$NOTES" \
+            --target "$GITHUB_SHA"
