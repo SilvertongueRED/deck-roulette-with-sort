@@ -19,13 +19,15 @@ collections.
 
 ## Sorting (added in this fork)
 
-A **🔀 Sort** button appears in two places and cycles through three orders:
+A **🔀 Sort** button appears in two places. It shows the order you will switch
+**to**, and the line under it shows the order that is **currently** in use.
+Each press cycles to the next of three orders:
 
 | Mode | Order |
 | --- | --- |
 | **Alphabetical** (default) | A–Z, the same as the parent plugin |
 | **Recently Rouletted** | Lists you most recently used the roulette button on come first |
-| **Recently Opened** | Lists containing the most recently played games come first |
+| **Recently Opened** | Lists you most recently opened in your Library, or played a game from, come first |
 
 - **Quick Access → Browse Other Lists…** sorts the unpinned lists.
 - **Customize Shortcuts → Available Shortcuts** sorts the lists you can pin.
@@ -35,6 +37,8 @@ Notes:
 - *Locally Installed Games* and *My Games* always stay at the top.
 - Lists that tie (for example, never rouletted) fall back to A–Z.
 - Your pinned shortcuts keep the manual order you set.
+- Library visits are recorded while the plugin is loaded, starting from the
+  version that introduced them (1.3.27-sort.2).
 - The chosen sort and the roulette history are remembered between sessions.
   They are stored on the Deck in the Steam UI's local storage, so they are not
   part of the plugin's `settings.json`.
@@ -46,6 +50,12 @@ Download `DeckRoulette-with-sort-<version>.zip` from the
 page, copy it to your Steam Deck, then in Decky: **Settings → General → turn on
 Developer Mode → Developer → Install Plugin from ZIP**. Remove any other
 DeckRoulette install first, because they share the same plugin name.
+
+## Releases
+
+Release notes live in [`release-notes/`](release-notes). When a push to `main`
+changes the version in `package.json`, the **Release** GitHub Action builds the
+plugin and publishes a release using `release-notes/<version>.md`.
 
 ## Development
 
