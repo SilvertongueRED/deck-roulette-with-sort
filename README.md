@@ -39,6 +39,8 @@ Notes:
 - Your pinned shortcuts keep the manual order you set.
 - Library visits are recorded while the plugin is loaded, starting from the
   version that introduced them (1.3.27-sort.2, widened in 1.3.27-sort.3).
+- Switching to a Library tab (including Tab Master tabs) whose name matches a
+  collection also counts as opening it. Matching is by name, ignoring case.
 - **Recently Opened Diagnostics** (bottom of Customize Shortcuts → Shortcuts) lists
   the last pages Steam reported and how many collection visits were recorded.
   It is a temporary aid while collection-visit tracking is being confirmed.
