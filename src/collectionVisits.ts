@@ -63,54 +63,11 @@ export const recordSourceVisit = (
 	return visits
 }
 
-export const ROUTE_SAMPLES_KEY = "deck-roulette-route-samples"
-const MAX_ROUTE_SAMPLES = 8
-
-export type RouteSample = { source: string; path: string }
-
-export const loadRouteSamples = (
-	storage: StorageLike | undefined = defaultStorage()
-): RouteSample[] => {
-	try {
-		const stored = storage?.getItem(ROUTE_SAMPLES_KEY)
-		const parsed = stored ? JSON.parse(stored) : undefined
-		if (Array.isArray(parsed)) {
-			return parsed.filter(
-				(sample): sample is RouteSample =>
-					typeof sample?.source === "string" &&
-					typeof sample?.path === "string"
-			)
-		}
-	} catch {
-		/* ignore */
-	}
-	return []
-}
-
 export const recordCollectionVisit = (
 	collectionId: string,
 	storage: StorageLike | undefined = defaultStorage(),
 	now: number = Date.now()
 ) => recordSourceVisit(collectionSourceId(collectionId), storage, now)
-
-/** Keeps the most recent distinct pages we saw, for the diagnostics readout. */
-export const recordRouteSample = (
-	sample: RouteSample,
-	storage: StorageLike | undefined
-) => {
-	const samples = loadRouteSamples(storage)
-	const last = samples[samples.length - 1]
-	if (last?.source === sample.source && last.path === sample.path) return
-
-	try {
-		storage?.setItem(
-			ROUTE_SAMPLES_KEY,
-			JSON.stringify([...samples, sample].slice(-MAX_ROUTE_SAMPLES))
-		)
-	} catch {
-		/* ignore */
-	}
-}
 
 /**
  * Watches every place the Steam UI might report its current page and records
@@ -125,7 +82,6 @@ export const startCollectionVisitTracker = (
 		now?: () => number
 	} = {}
 ) => {
-	const lastPaths = new Map<string, string | undefined>()
 	let lastCollectionId: string | undefined
 	const check = () => {
 		const storage = options.storage ?? defaultStorage()
@@ -137,12 +93,8 @@ export const startCollectionVisitTracker = (
 		}
 
 		let collectionId: string | undefined
-		for (const [source, path] of Object.entries(locations)) {
+		for (const path of Object.values(locations)) {
 			if (path === undefined) continue
-			if (lastPaths.get(source) !== path) {
-				recordRouteSample({ source, path }, storage)
-			}
-			lastPaths.set(source, path)
 			collectionId ??= collectionIdFromLocation(path)
 		}
 
@@ -183,10 +135,6 @@ export const startLibraryTabTracker = (
 		}
 
 		if (label !== lastLabel) {
-			recordRouteSample(
-				{ source: "library-tab", path: label ?? "(none)" },
-				storage
-			)
 			// The first reading is only the starting point, not a visit.
 			if (primed && label) {
 				let sourceId: string | undefined

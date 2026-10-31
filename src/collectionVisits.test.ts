@@ -3,7 +3,6 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest"
 import {
 	collectionIdFromLocation,
 	loadCollectionVisits,
-	loadRouteSamples,
 	recordCollectionVisit,
 	startCollectionVisitTracker,
 	startLibraryTabTracker,
@@ -75,7 +74,7 @@ describe("startCollectionVisitTracker", () => {
 		expect(loadCollectionVisits(storage)["collection:uc-b"]).toBeUndefined()
 	})
 
-	test("finds a collection reported by any source and logs what it saw", () => {
+	test("finds a collection reported by any source", () => {
 		const storage = memoryStorage()
 		let history: string | undefined = "/library/home"
 		const stop = startCollectionVisitTracker(
@@ -92,11 +91,6 @@ describe("startCollectionVisitTracker", () => {
 		stop()
 
 		expect(loadCollectionVisits(storage)).toEqual({ "collection:uc-x": 42 })
-		expect(loadRouteSamples(storage)).toEqual([
-			{ source: "steam-history", path: "/library/home" },
-			{ source: "this-window", path: "/routes/shared" },
-			{ source: "steam-history", path: "/library/collection/uc-x" },
-		])
 	})
 
 	test("survives location lookups that throw", () => {
@@ -201,14 +195,6 @@ describe("startLibraryTabTracker", () => {
 		now = 900
 		vi.advanceTimersByTime(1000)
 		expect(loadCollectionVisits(storage)["collection:cozy-id"]).toBe(900)
-
-		expect(loadRouteSamples(storage).map(({ path }) => path)).toEqual([
-			"Favorites",
-			"COZY",
-			"Demo",
-			"(none)",
-			"Cozy",
-		])
 		stop()
 	})
 
