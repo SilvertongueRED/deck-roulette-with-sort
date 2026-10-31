@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest"
 import {
 	collectionIdFromLocation,
 	loadCollectionVisits,
+	loadRouteSamples,
 	recordCollectionVisit,
 	startCollectionVisitTracker,
 } from "./collectionVisits"
@@ -25,11 +26,16 @@ describe("collectionIdFromLocation", () => {
 		expect(collectionIdFromLocation("/routes/library/collection/uc%2D5?x=1")).toBe(
 			"uc-5"
 		)
+		expect(collectionIdFromLocation("/library/collections/uc-9")).toBe("uc-9")
 	})
 
 	test("ignores other pages", () => {
 		expect(collectionIdFromLocation("/library/app/123")).toBeUndefined()
 		expect(collectionIdFromLocation("/library/home")).toBeUndefined()
+		expect(collectionIdFromLocation("/library/collections")).toBeUndefined()
+		expect(
+			collectionIdFromLocation("/deck-roulette/settings/shortcuts")
+		).toBeUndefined()
 		expect(collectionIdFromLocation(undefined)).toBeUndefined()
 	})
 })
@@ -42,7 +48,7 @@ describe("startCollectionVisitTracker", () => {
 		const storage = memoryStorage()
 		let location = "/library/home"
 		let now = 1000
-		const stop = startCollectionVisitTracker(() => location, {
+		const stop = startCollectionVisitTracker(() => ({ main: location }), {
 			storage,
 			now: () => now,
 		})
@@ -68,10 +74,37 @@ describe("startCollectionVisitTracker", () => {
 		expect(loadCollectionVisits(storage)["collection:uc-b"]).toBeUndefined()
 	})
 
+	test("finds a collection reported by any source and logs what it saw", () => {
+		const storage = memoryStorage()
+		let history: string | undefined = "/library/home"
+		const stop = startCollectionVisitTracker(
+			() => ({
+				"steam-history": history,
+				"this-window": "/routes/shared",
+				missing: undefined,
+			}),
+			{ storage, now: () => 42 }
+		)
+
+		history = "/library/collection/uc-x"
+		vi.advanceTimersByTime(2000)
+		stop()
+
+		expect(loadCollectionVisits(storage)).toEqual({ "collection:uc-x": 42 })
+		expect(loadRouteSamples(storage)).toEqual([
+			{ source: "steam-history", path: "/library/home" },
+			{ source: "this-window", path: "/routes/shared" },
+			{ source: "steam-history", path: "/library/collection/uc-x" },
+		])
+	})
+
 	test("survives location lookups that throw", () => {
-		const stop = startCollectionVisitTracker(() => {
-			throw new Error("not ready")
-		}, { storage: memoryStorage() })
+		const stop = startCollectionVisitTracker(
+			() => {
+				throw new Error("not ready")
+			},
+			{ storage: memoryStorage() }
+		)
 		expect(() => vi.advanceTimersByTime(2000)).not.toThrow()
 		stop()
 	})

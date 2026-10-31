@@ -12,12 +12,23 @@ export default definePlugin(() => {
 	const settingsStore = new SettingsStore()
 	// Remember which library collections you open so "Recently Opened" can sort by them.
 	const stopCollectionVisitTracker = startCollectionVisitTracker(() => {
-		const mainWindow =
-			Router.WindowStore?.GamepadUIMainWindowInstance?.BrowserWindow
-		const location = mainWindow?.location ?? window.location
-		return `${location.pathname}${location.hash}`
-	})
+		const mainWindow: any = Router.WindowStore?.GamepadUIMainWindowInstance
+		const describe = (location?: {
+			pathname?: string
+			hash?: string
+		}) =>
+			location
+				? `${location.pathname ?? ""}${location.hash ?? ""}`
+				: undefined
 
+		// Steam's UI may keep its page in its own history object rather than in
+		// the browser address, so check each place it could be.
+		return {
+			"steam-history": describe(mainWindow?.m_history?.location),
+			"main-window": describe(mainWindow?.BrowserWindow?.location),
+			"this-window": describe(window.location),
+		}
+	})
 	routerHook.addRoute(SETTINGS_ROUTE, () => (
 		<CollectionSettings store={settingsStore} />
 	))

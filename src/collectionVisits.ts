@@ -3,7 +3,9 @@ import type { StorageLike } from "./sortSettings"
 
 export const COLLECTION_VISITS_KEY = "deck-roulette-collection-visits"
 
-const COLLECTION_ROUTE = /\/library\/collection\/([^/?#]+)/
+// Steam's library route has been seen as /library/collection/<id>; stay loose
+// about the prefix so a different mount point (or plural) still matches.
+const COLLECTION_ROUTE = /\/collections?\/([^/?#]+)/
 
 const defaultStorage = (): StorageLike | undefined => {
 	try {
@@ -61,33 +63,85 @@ export const recordCollectionVisit = (
 	return visits
 }
 
+export const ROUTE_SAMPLES_KEY = "deck-roulette-route-samples"
+const MAX_ROUTE_SAMPLES = 8
+
+export type RouteSample = { source: string; path: string }
+
+export const loadRouteSamples = (
+	storage: StorageLike | undefined = defaultStorage()
+): RouteSample[] => {
+	try {
+		const stored = storage?.getItem(ROUTE_SAMPLES_KEY)
+		const parsed = stored ? JSON.parse(stored) : undefined
+		if (Array.isArray(parsed)) {
+			return parsed.filter(
+				(sample): sample is RouteSample =>
+					typeof sample?.source === "string" &&
+					typeof sample?.path === "string"
+			)
+		}
+	} catch {
+		/* ignore */
+	}
+	return []
+}
+
+/** Keeps the most recent distinct pages we saw, for the diagnostics readout. */
+const recordRouteSample = (
+	sample: RouteSample,
+	storage: StorageLike | undefined
+) => {
+	const samples = loadRouteSamples(storage)
+	const last = samples[samples.length - 1]
+	if (last?.source === sample.source && last.path === sample.path) return
+
+	try {
+		storage?.setItem(
+			ROUTE_SAMPLES_KEY,
+			JSON.stringify([...samples, sample].slice(-MAX_ROUTE_SAMPLES))
+		)
+	} catch {
+		/* ignore */
+	}
+}
+
 /**
- * Watches the Steam UI's current location and records a visit each time the
- * user navigates into a library collection. Returns a function that stops it.
+ * Watches every place the Steam UI might report its current page and records
+ * a visit each time the user navigates into a library collection. Returns a
+ * function that stops it.
  */
 export const startCollectionVisitTracker = (
-	getLocation: () => string | undefined,
+	getLocations: () => Record<string, string | undefined>,
 	options: {
 		storage?: StorageLike
 		intervalMs?: number
 		now?: () => number
 	} = {}
 ) => {
+	const lastPaths = new Map<string, string | undefined>()
 	let lastCollectionId: string | undefined
 	const check = () => {
-		let location: string | undefined
+		const storage = options.storage ?? defaultStorage()
+		let locations: Record<string, string | undefined>
 		try {
-			location = getLocation()
+			locations = getLocations()
 		} catch {
 			return
 		}
-		const collectionId = collectionIdFromLocation(location)
+
+		let collectionId: string | undefined
+		for (const [source, path] of Object.entries(locations)) {
+			if (path === undefined) continue
+			if (lastPaths.get(source) !== path) {
+				recordRouteSample({ source, path }, storage)
+			}
+			lastPaths.set(source, path)
+			collectionId ??= collectionIdFromLocation(path)
+		}
+
 		if (collectionId && collectionId !== lastCollectionId) {
-			recordCollectionVisit(
-				collectionId,
-				options.storage ?? defaultStorage(),
-				options.now?.()
-			)
+			recordCollectionVisit(collectionId, storage, options.now?.())
 		}
 		lastCollectionId = collectionId
 	}

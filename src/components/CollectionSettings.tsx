@@ -29,7 +29,7 @@ import {
 } from "../gamePools"
 import { SETTINGS_ROUTE } from "../routes"
 import { SettingsStore } from "../settingsStore"
-import { loadCollectionVisits } from "../collectionVisits"
+import { loadCollectionVisits, loadRouteSamples } from "../collectionVisits"
 import {
 	getNextSortMode,
 	loadRouletteTimestamps,
@@ -87,6 +87,31 @@ const PinButton = ({
 		/>
 	</DialogButton>
 )
+
+const OpenedDiagnostics = () => {
+	const [visits] = useState(loadCollectionVisits)
+	const [samples] = useState(loadRouteSamples)
+
+	return (
+		<PanelSection title="Recently Opened Diagnostics">
+			<PanelSectionRow>
+				<div style={{ width: "100%", fontSize: "0.85em", opacity: 0.8 }}>
+					<div>Collection visits recorded: {Object.keys(visits).length}</div>
+					<div style={{ marginTop: "8px" }}>Last pages Steam reported:</div>
+					{samples.length > 0 ? (
+						samples.map((sample, index) => (
+							<div key={index} style={{ wordBreak: "break-all" }}>
+								{sample.source}: {sample.path || "(empty)"}
+							</div>
+						))
+					) : (
+						<div>None yet.</div>
+					)}
+				</div>
+			</PanelSectionRow>
+		</PanelSection>
+	)
+}
 
 const ShortcutSettings = ({ store }: SettingsPageProps) => {
 	const { collectionStore }: { collectionStore?: CollectionStore } = window as any
@@ -303,6 +328,7 @@ const ShortcutSettings = ({ store }: SettingsPageProps) => {
 					</ButtonItem>
 				</PanelSectionRow>
 			</PanelSection>
+			<OpenedDiagnostics />
 		</div>
 	)
 }
