@@ -1,244 +1,26 @@
-import {
-	ButtonItem,
-	PanelSection,
-	PanelSectionRow,
-	staticClasses,
-} from "@decky/ui"
-import { definePlugin } from "@decky/api"
-import { useState } from "react"
+import { staticClasses } from "@decky/ui"
+import { definePlugin, routerHook } from "@decky/api"
 import { GiPerspectiveDiceSixFacesRandom } from "react-icons/gi"
 
-import {
-	EXCLUDE_COLLECTION_IDS,
-	navigateToRandomGame,
-	SortMode,
-	SORT_MODE_LABELS,
-	getNextSortMode,
-	loadSortMode,
-	saveSortMode,
-	loadRouletteTimestamps,
-	saveRouletteTimestamp,
-	sortCollections,
-} from "./utils"
-
-const DeckRoulette = () => {
-	const { collectionStore }: { collectionStore: CollectionStore } =
-		window as any
-
-	const collections = collectionStore.userCollections
-
-	const localGames: SteamCollection = collectionStore.localGamesCollection
-
-	const allInstalled = [
-		...localGames.visibleApps,
-		...collectionStore.deckDesktopApps.visibleApps,
-	]
-
-	const myGamesCollection = collectionStore.myGamesCollection
-
-	const [sortMode, setSortMode] = useState<SortMode>(loadSortMode())
-	const [rouletteTimestamps, setRouletteTimestamps] = useState<
-		Record<string, number>
-	>(loadRouletteTimestamps())
-
-	const cycleSortMode = () => {
-		const nextMode = getNextSortMode(sortMode)
-		setSortMode(nextMode)
-		saveSortMode(nextMode)
-	}
-
-	const handleRouletteClick = (
-		collectionId: string,
-		appIds: number[]
-	) => {
-		const newTimestamps = saveRouletteTimestamp(collectionId)
-		setRouletteTimestamps(newTimestamps)
-		navigateToRandomGame(appIds)
-	}
-
-	const filteredCollections = collections.filter(
-		(c) => !EXCLUDE_COLLECTION_IDS.includes(c.id)
-	)
-	const sortedCollections = sortCollections(
-		filteredCollections,
-		sortMode,
-		rouletteTimestamps
-	)
-
-	/* Uncomment to enable in-plugin custom lists
-	const [customLists, setCustomLists] = useState<{
-		[key: string]: number[]
-	}>()
-	const [editingList, setEditingList] = useState<{
-		listName?: string
-		appIds: number[]
-	}>()
-
-	useEffect(() => {
-		call<[], { [key: string]: number[] }>("get_game_lists")
-			.then((result) => {
-				console.log(result)
-				setCustomLists(result)
-			})
-	}, [])
-
-	if (editingList)
-		return (
-			<ListEditor
-				currentName={editingList.listName}
-				currentList={editingList.appIds}
-				setEditingList={setEditingList}
-				setCustomLists={setCustomLists}
-			/>
-		)
-  */
-
-	return (
-		<div>
-			<PanelSection title="Sort Collections">
-				<PanelSectionRow>
-					<ButtonItem layout="below" onClick={cycleSortMode}>
-						<div
-							style={{
-								display: "flex",
-								flexDirection: "column",
-								alignItems: "center",
-								gap: "4px",
-								padding: "2px 0",
-							}}
-						>
-							<div
-								style={{
-									fontSize: "1em",
-									fontWeight: "bold",
-									letterSpacing: "0.5px",
-								}}
-							>
-								🔀 Sort: {SORT_MODE_LABELS[sortMode]}
-							</div>
-							<div
-								style={{
-									fontSize: "0.75em",
-									opacity: 0.6,
-									fontStyle: "italic",
-								}}
-							>
-								Next:{" "}
-								{
-									SORT_MODE_LABELS[
-										getNextSortMode(sortMode)
-									]
-								}
-							</div>
-						</div>
-					</ButtonItem>
-				</PanelSectionRow>
-			</PanelSection>
-			<PanelSection title="Random Game">
-				{localGames ? (
-					<PanelSectionRow>
-						<ButtonItem
-							layout="below"
-							onClick={() =>
-								navigateToRandomGame(
-									allInstalled.map((app) => app.appid)
-								)
-							}
-						>
-							{localGames.displayName} ({allInstalled.length})
-						</ButtonItem>
-					</PanelSectionRow>
-				) : null}
-				<PanelSectionRow>
-					<ButtonItem
-						layout="below"
-						onClick={() =>
-							navigateToRandomGame(
-								myGamesCollection.visibleApps.map(
-									(app) => app.appid
-								)
-							)
-						}
-					>
-						{myGamesCollection.displayName} (
-						{myGamesCollection.visibleApps.length})
-					</ButtonItem>
-				</PanelSectionRow>
-			</PanelSection>
-			{/* <PanelSection title="Custom Game Lists">
-				{customLists
-					? Object.entries(customLists).map(([listName, appIds]) => (
-							<PanelSectionRow key={listName}>
-								<CustomListItem
-									onSelect={() =>
-										navigateToRandomGame(appIds)
-									}
-									onEdit={() =>
-										setEditingList({ listName, appIds })
-									}
-									onDelete={() =>
-										call<[string], { [key: string]: number[] }>("delete_game_list", listName)
-											.then((result) => {
-												setCustomLists(result)
-											})
-									}
-								>
-									<span>
-										{listName} ({appIds.length})
-									</span>
-								</CustomListItem>
-							</PanelSectionRow>
-					  ))
-					: null}
-				<PanelSectionRow>
-					<ButtonItem
-						layout="below"
-						onClick={() => {
-							showModal(
-								<ListNameModal
-									initialText=""
-									onOK={(listName) =>
-										setEditingList({ listName, appIds: [] })
-									}
-								/>
-							)
-						}}
-					>
-						Add New List
-					</ButtonItem>
-				</PanelSectionRow>
-			</PanelSection> */}
-			<PanelSection title="Steam Collections">
-				{sortedCollections.map((collection) => (
-					<PanelSectionRow key={collection.id}>
-						<ButtonItem
-							layout="below"
-							onClick={() =>
-								handleRouletteClick(
-									collection.id,
-									collection.visibleApps.map(
-										(app) => app.appid
-									)
-								)
-							}
-						>
-							{collection.displayName} (
-							{collection.visibleApps.length})
-						</ButtonItem>
-					</PanelSectionRow>
-				))}
-			</PanelSection>
-		</div>
-	)
-}
+import { CollectionSettings } from "./components/CollectionSettings"
+import { QuickAccess } from "./components/QuickAccess"
+import { SETTINGS_ROUTE } from "./routes"
+import { SettingsStore } from "./settingsStore"
 
 export default definePlugin(() => {
+	const settingsStore = new SettingsStore()
+
+	routerHook.addRoute(SETTINGS_ROUTE, () => (
+		<CollectionSettings store={settingsStore} />
+	))
+
 	return {
 		name: "DeckRoulette",
 		titleView: <div className={staticClasses.Title}>DeckRoulette</div>,
-		content: <DeckRoulette />,
+		content: <QuickAccess store={settingsStore} />,
 		icon: <GiPerspectiveDiceSixFacesRandom />,
-		alwaysRender: false,
-		onDismount() {},
+		onDismount() {
+			routerHook.removeRoute(SETTINGS_ROUTE)
+		},
 	}
 })

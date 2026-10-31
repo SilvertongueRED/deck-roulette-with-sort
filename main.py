@@ -1,54 +1,76 @@
-import os
-from settings import SettingsManager
+import json
+from pathlib import Path
+from typing import Any
 
-# The decky plugin module is located at decky-loader/plugin
-# For easy intellisense checkout the decky-loader code one directory up
-# or add the `decky-loader/plugin` path to `python.analysis.extraPaths` in `.vscode/settings.json`
-import decky_plugin
+import decky
+
+
+DEFAULT_SETTINGS = {
+    "excludedCollectionIds": [],
+    "pinnedSourceIds": ["builtin:installed", "builtin:my-games"],
+}
+SETTINGS_DIR = getattr(decky, "DECKY_SETTINGS_DIR", None)
+if SETTINGS_DIR is None:
+    SETTINGS_DIR = decky.DECKY_PLUGIN_SETTINGS_DIR
 
 
 class Plugin:
-    game_lists = SettingsManager("deck-roulette", os.path.join(decky_plugin.DECKY_PLUGIN_SETTINGS_DIR, "gameLists.json"))
+    settings_path = Path(SETTINGS_DIR) / "settings.json"
 
-    # A normal method. It can be called from JavaScript using call_plugin_function("method_1", argument1, argument2)
-    async def add(self, left, right):
-        return left + right
+    def _default_settings(self) -> dict[str, list[str]]:
+        return {
+            key: list(value)
+            for key, value in DEFAULT_SETTINGS.items()
+        }
 
-    # Asyncio-compatible long-running code, executed in a task when the plugin is loaded
+    def _validated_settings(self, settings: Any) -> dict[str, list[str]]:
+        if not isinstance(settings, dict):
+            return self._default_settings()
+
+        validated_settings: dict[str, list[str]] = {}
+        for key, default_ids in DEFAULT_SETTINGS.items():
+            ids = settings.get(key, default_ids)
+            if not isinstance(ids, list):
+                ids = default_ids
+
+            validated_settings[key] = list(
+                dict.fromkeys(
+                    item_id
+                    for item_id in ids
+                    if isinstance(item_id, str)
+                )
+            )
+
+        return validated_settings
+
+    async def get_settings(self) -> dict[str, list[str]]:
+        try:
+            with self.settings_path.open(encoding="utf-8") as settings_file:
+                return self._validated_settings(json.load(settings_file))
+        except FileNotFoundError:
+            return self._default_settings()
+        except (OSError, json.JSONDecodeError):
+            decky.logger.exception("Could not read DeckRoulette settings")
+            return self._default_settings()
+
+    async def save_settings(self, settings: Any) -> dict[str, list[str]]:
+        validated_settings = self._validated_settings(settings)
+        self.settings_path.parent.mkdir(parents=True, exist_ok=True)
+        temporary_path = self.settings_path.with_suffix(".tmp")
+
+        try:
+            with temporary_path.open("w", encoding="utf-8") as settings_file:
+                json.dump(validated_settings, settings_file, indent=2)
+                settings_file.write("\n")
+            temporary_path.replace(self.settings_path)
+        except OSError:
+            decky.logger.exception("Could not save DeckRoulette settings")
+            raise
+
+        return validated_settings
+
     async def _main(self):
-        decky_plugin.logger.info("Hello World!")
+        decky.logger.info("DeckRoulette loaded")
 
-    # Function called first during the unload process, utilize this to handle your plugin being removed
     async def _unload(self):
-        decky_plugin.logger.info("Goodbye World!")
-        pass
-
-    # # Get Game Lists
-    # async def get_game_lists(self):
-    #     self.game_lists.read()
-    #     self.game_lists
-    #     return self.game_lists.getSetting("gameLists", {})
-    
-    # # Update Game List
-    # async def update_game_list(self, name, new_list, new_name=None):
-    #     self.game_lists.read()
-    #     game_lists = self.game_lists.getSetting("gameLists", {})
-    #     if new_name is not None:
-    #         game_lists[new_name] = new_list
-    #         del game_lists[name]
-    #     else:
-    #         game_lists[name] = new_list
-    #     self.game_lists.setSetting("gameLists", game_lists)
-    #     self.game_lists.commit()
-    #     decky_plugin.logger.info(game_lists)
-    #     return game_lists
-    
-    # # Delete Game List
-    # async def delete_game_list(self, name):
-    #     self.game_lists.read()
-    #     game_lists = self.game_lists.getSetting("gameLists", {})
-    #     del game_lists[name]
-    #     self.game_lists.setSetting("gameLists", game_lists)
-    #     self.game_lists.commit()
-    #     decky_plugin.logger.info(game_lists)
-    #     return game_lists
+        decky.logger.info("DeckRoulette unloaded")

@@ -4,6 +4,7 @@ ifneq (,$(wildcard ./.env))
 endif
 
 SHELL=bash
+PNPM ?= npx -y pnpm@9.4.0
 
 help: ## Display list of tasks with descriptions
 	@echo "+ $@"
@@ -11,7 +12,7 @@ help: ## Display list of tasks with descriptions
 
 vendor: ## Install project dependencies
 	@echo "+ $@"
-	@pnpm i
+	@$(PNPM) i
 
 env: ## Create default .env file
 	@echo "+ $@"
@@ -28,20 +29,16 @@ init: ## Initialize project
 	@echo -e "3. Build your code with \`\033[0;36mmake build\033[0m\` or \`\033[0;36mmake docker-build\033[0m\` to build inside a docker container"
 	@echo -e "4. Deploy your plugin code to steamdeck with \`\033[0;36mmake deploy\033[0m\`"
 
-update-frontend-lib: ## Update decky-frontend-lib
+update-decky-dependencies: ## Update Decky SDK dependencies
 	@echo "+ $@"
-	@pnpm update decky-frontend-lib --latest
+	@$(PNPM) update @decky/api @decky/rollup @decky/ui --latest
 
 build-front: ## Build frontend
 	@echo "+ $@"
-	@pnpm run build
-
-build-back: ## Build backend
-	@echo "+ $@"
-	@make -C ./backend
+	@$(PNPM) run build
 
 build: ## Build everything
-	@$(MAKE) build-front build-back
+	@$(MAKE) build-front
 
 copy-ssh-key: ## Copy public ssh key to steamdeck
 	@echo "+ $@"
@@ -50,8 +47,10 @@ copy-ssh-key: ## Copy public ssh key to steamdeck
 deploy-steamdeck: ## Deploy plugin build to steamdeck
 	@echo "+ $@"
 	@ssh $(DECK_USER)@$(DECK_HOST) -p $(DECK_PORT) -i $(DECK_KEY) \
- 		'chmod -v 755 $(DECK_HOME)/homebrew/plugins/ && mkdir -p $(DECK_HOME)/homebrew/plugins/$(PLUGIN_FOLDER)'
-	@rsync -azp --delete --progress -e "ssh -p $(DECK_PORT) -i $(DECK_KEY)" \
+		'sudo -n mkdir -p $(DECK_HOME)/homebrew/plugins/$(PLUGIN_FOLDER)'
+	@rsync -azp --delete --delete-excluded --progress -e "ssh -p $(DECK_PORT) -i $(DECK_KEY)" \
+		--rsync-path="sudo -n rsync" \
+		--no-owner --no-group \
 		--chmod=Du=rwx,Dg=rx,Do=rx,Fu=rwx,Fg=rx,Fo=rx \
 		--exclude='.git/' \
 		--exclude='.github/' \
@@ -59,19 +58,28 @@ deploy-steamdeck: ## Deploy plugin build to steamdeck
 		--exclude='node_modules/' \
 		--exclude='.pnpm-store/' \
 		--exclude='src/' \
+		--exclude='tests/' \
+		--exclude='screenshots/' \
+		--exclude='pnpm-lock.yaml' \
+		--exclude='rollup.config.js' \
+		--exclude='tsconfig.json' \
+		--exclude='*.pyi' \
+		--exclude='*.map' \
 		--exclude='*.log' \
-		--exclude='.gitignore' . \
-		--exclude='.idea' . \
-		--exclude='.env' . \
-		--exclude='Makefile' . \
+		--exclude='__pycache__/' \
+		--exclude='*.pyc' \
+		--exclude='.gitignore' \
+		--exclude='.idea/' \
+		--exclude='.env' \
+		--exclude='Makefile' \
  		./ $(DECK_USER)@$(DECK_HOST):$(DECK_HOME)/homebrew/plugins/$(PLUGIN_FOLDER)/
 	@ssh $(DECK_USER)@$(DECK_HOST) -p $(DECK_PORT) -i $(DECK_KEY) \
- 		'chmod -v 755 $(DECK_HOME)/homebrew/plugins/'
+		'sudo -n chown -R root:root $(DECK_HOME)/homebrew/plugins/$(PLUGIN_FOLDER)'
 
 restart-decky: ## Restart Decky on remote steamdeck
 	@echo "+ $@"
-	@ssh -t $(DECK_USER)@$(DECK_HOST) -p $(DECK_PORT) -i $(DECK_KEY) \
- 		'sudo systemctl restart plugin_loader.service'
+	@ssh $(DECK_USER)@$(DECK_HOST) -p $(DECK_PORT) -i $(DECK_KEY) \
+		'sudo -n systemctl restart plugin_loader.service'
 	@echo -e '\033[0;32m+ all is good, restarting Decky...\033[0m'
 
 deploy: ## Deploy code to steamdeck and restart Decky
@@ -101,6 +109,5 @@ docker-rebuild-image: ## Rebuild docker image
 	@docker compose build --pull
 
 docker-build: ## Build project inside docker container
-	@$(MAKE) build-back
 	@echo "+ $@"
 	@docker run --rm -i -v $(PWD):/plugin -v $(PWD)/tmp/out:/out ghcr.io/steamdeckhomebrew/builder:latest
