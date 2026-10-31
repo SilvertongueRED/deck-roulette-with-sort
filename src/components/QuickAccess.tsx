@@ -24,6 +24,7 @@ import {
 	resolveOtherListsFocus,
 	SETTINGS_FOCUS_ID,
 } from "../quickAccessFocus"
+import { loadCollectionVisits } from "../collectionVisits"
 import {
 	getNextSortMode,
 	loadRouletteTimestamps,
@@ -67,6 +68,7 @@ export const QuickAccess = ({ store }: QuickAccessProps) => {
 	const [rouletteTimestamps, setRouletteTimestamps] = useState(
 		loadRouletteTimestamps
 	)
+	const [collectionVisits] = useState(loadCollectionVisits)
 	const collections = selectableCollections(collectionStore)
 	const availableSources = availableRouletteSources(
 		collectionStore,
@@ -77,7 +79,8 @@ export const QuickAccess = ({ store }: QuickAccessProps) => {
 	const otherSources = sortSources(
 		unsortedOtherSources,
 		sortMode,
-		rouletteTimestamps
+		rouletteTimestamps,
+		collectionVisits
 	)
 	const knownCollectionIds = new Set(
 		collections.map((collection) => collection.id)
@@ -185,11 +188,9 @@ export const QuickAccess = ({ store }: QuickAccessProps) => {
 						<ButtonItem
 							layout="below"
 							onClick={cycleSortMode}
-							description={`Next: ${
-								SORT_MODE_LABELS[getNextSortMode(sortMode)]
-							}`}
+							description={`Current: ${SORT_MODE_LABELS[sortMode]}`}
 						>
-							🔀 Sort: {SORT_MODE_LABELS[sortMode]}
+							🔀 Sort: {SORT_MODE_LABELS[getNextSortMode(sortMode)]}
 						</ButtonItem>
 					</PanelSectionRow>
 					{otherSources.map((source) => (

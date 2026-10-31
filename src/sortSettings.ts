@@ -108,6 +108,20 @@ const rouletteTime = (
 	(source.collectionId ? timestamps[source.collectionId] : undefined) ??
 	0
 
+/**
+ * "Opened" means either the list was visited in the library or a game in it
+ * was played, whichever happened last. Visits are in milliseconds; Steam's
+ * last-played times are in seconds.
+ */
+const openedTime = (
+	source: RouletteSource,
+	collectionVisits: Record<string, number>
+) =>
+	Math.max(
+		collectionVisits[source.id] ?? 0,
+		(source.lastPlayed ?? 0) * 1000
+	)
+
 const byLabel = (left: RouletteSource, right: RouletteSource) =>
 	left.label.localeCompare(right.label)
 
@@ -119,7 +133,8 @@ const byLabel = (left: RouletteSource, right: RouletteSource) =>
 export const sortSources = (
 	sources: RouletteSource[],
 	mode: SortMode,
-	rouletteTimestamps: Record<string, number> = {}
+	rouletteTimestamps: Record<string, number> = {},
+	collectionVisits: Record<string, number> = {}
 ): RouletteSource[] => {
 	const builtIns = sources.filter(({ kind }) => kind !== "collection")
 	const collections = sources.filter(({ kind }) => kind === "collection")
@@ -134,7 +149,8 @@ export const sortSources = (
 			}
 			case SortMode.RecentlyOpened: {
 				const difference =
-					(right.lastPlayed ?? 0) - (left.lastPlayed ?? 0)
+					openedTime(right, collectionVisits) -
+					openedTime(left, collectionVisits)
 				return difference || byLabel(left, right)
 			}
 			default:

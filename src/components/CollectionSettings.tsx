@@ -29,6 +29,7 @@ import {
 } from "../gamePools"
 import { SETTINGS_ROUTE } from "../routes"
 import { SettingsStore } from "../settingsStore"
+import { loadCollectionVisits } from "../collectionVisits"
 import {
 	getNextSortMode,
 	loadRouletteTimestamps,
@@ -98,6 +99,7 @@ const ShortcutSettings = ({ store }: SettingsPageProps) => {
 	)
 	const [sortMode, setSortMode] = useState(loadSortMode)
 	const [rouletteTimestamps] = useState(loadRouletteTimestamps)
+	const [collectionVisits] = useState(loadCollectionVisits)
 	const { pinnedSources, availableSources: unsortedShortcuts } =
 		partitionSourcesByPinned(
 			availableSources,
@@ -106,7 +108,8 @@ const ShortcutSettings = ({ store }: SettingsPageProps) => {
 	const availableShortcuts = sortSources(
 		unsortedShortcuts,
 		sortMode,
-		rouletteTimestamps
+		rouletteTimestamps,
+		collectionVisits
 	)
 	const cycleSortMode = () => {
 		const nextMode = getNextSortMode(sortMode)
@@ -249,11 +252,9 @@ const ShortcutSettings = ({ store }: SettingsPageProps) => {
 					<ButtonItem
 						layout="below"
 						onClick={cycleSortMode}
-						description={`Next: ${
-							SORT_MODE_LABELS[getNextSortMode(sortMode)]
-						}`}
+						description={`Current: ${SORT_MODE_LABELS[sortMode]}`}
 					>
-						🔀 Sort: {SORT_MODE_LABELS[sortMode]}
+						🔀 Sort: {SORT_MODE_LABELS[getNextSortMode(sortMode)]}
 					</ButtonItem>
 				</PanelSectionRow>
 				{availableShortcuts.length > 0 ? (
