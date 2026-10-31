@@ -38,7 +38,10 @@ Notes:
 - Lists that tie (for example, never rouletted) fall back to A–Z.
 - Your pinned shortcuts keep the manual order you set.
 - Library visits are recorded while the plugin is loaded, starting from the
-  version that introduced them (1.3.27-sort.2).
+  version that introduced them (1.3.27-sort.2, widened in 1.3.27-sort.3).
+- **Recently Opened Diagnostics** (bottom of Customize Shortcuts → Shortcuts) lists
+  the last pages Steam reported and how many collection visits were recorded.
+  It is a temporary aid while collection-visit tracking is being confirmed.
 - The chosen sort and the roulette history are remembered between sessions.
   They are stored on the Deck in the Steam UI's local storage, so they are not
   part of the plugin's `settings.json`.
