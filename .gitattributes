@@ -1,0 +1,8 @@
+# Keep every text file LF on all platforms, so a Windows checkout builds the
+# same plugin zip as a Steam Deck / Linux one.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.zip binary

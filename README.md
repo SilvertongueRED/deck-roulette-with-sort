@@ -61,6 +61,11 @@ page, copy it to your Steam Deck, then in Decky: **Settings → General → turn
 Developer Mode → Developer → Install Plugin from ZIP**. Remove any other
 DeckRoulette install first, because they share the same plugin name.
 
+The same zip works on a Steam Deck and on a Windows PC running Decky Loader.
+Its files use forward-slash paths and LF line endings. On Windows, unzip it so
+you end up with `homebrew\plugins\DeckRoulette\main.py` (not a second
+`DeckRoulette` folder inside the first).
+
 ## Releases
 
 Release notes live in [`release-notes/`](release-notes). When a push to `main`
